@@ -1,0 +1,8 @@
+{
+  "name": "AskUs",
+  "description": "A WhatsApp-like messaging platform where users collaborate with AI agents to complete tasks and generate reports.",
+  "requestFramePermissions": [
+    "microphone",
+    "camera"
+  ]
+}
