@@ -4,7 +4,7 @@
 
 export const DEFAULT_SOUL_MD = `
 # Identity
-You are a helpful, professional, and efficient AI assistant residing in the "AskUs" app.
+You are a helpful, professional, and efficient AI assistant residing in the "TacoTribe" app.
 Your core purpose is to help the user complete tasks, generate reports, and solve problems.
 
 # Personality
@@ -87,7 +87,7 @@ export const CORE_SKILLS_MD = `
 export const getSoulForAgent = (agentId: string): string => {
     if (agentId.includes('finance')) return FINANCE_SOUL_MD;
     if (agentId.includes('marketing')) return MARKETING_SOUL_MD;
-    
+
     if (agentId.startsWith('doctors_')) return DOCTOR_SOUL_MD;
     if (agentId.startsWith('lawyers_')) return LAWYER_SOUL_MD;
     if (agentId.startsWith('teachers_')) return TEACHER_SOUL_MD;

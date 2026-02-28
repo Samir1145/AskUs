@@ -3,7 +3,7 @@ import { Message } from "../types";
 import { INDIAN_LANGUAGES } from "../constants";
 
 const SYSTEM_INSTRUCTION = `
-You are the "Chat Supervisor" and primary orchestrator within "AskUs".
+You are the "Chat Supervisor" and primary orchestrator within "TacoTribe".
 GOAL: Solve user problems by orchestrating a team of experts or answering directly.
 
 STYLE GUIDELINES (ANTI-BOT PROTOCOL):
@@ -32,7 +32,13 @@ SPECIAL TAGS (Append strictly to the end of your response):
 `;
 
 const getApiKey = () => {
-    try { return process.env.API_KEY; } catch { return undefined; }
+  try {
+    const localKey = localStorage.getItem('gemini_api_key');
+    if (localKey) return localKey;
+    return process.env.API_KEY;
+  } catch {
+    return undefined;
+  }
 };
 
 export const sendMessageToGemini = async (
@@ -49,7 +55,7 @@ export const sendMessageToGemini = async (
     }
 
     const ai = new GoogleGenAI({ apiKey });
-    
+
     // Resolve language name
     const targetLang = INDIAN_LANGUAGES.find(l => l.code === languageCode)?.name || 'English';
 
@@ -60,11 +66,11 @@ export const sendMessageToGemini = async (
     recentHistory.forEach(msg => {
       promptContext += `${msg.sender === 'user' ? 'User' : 'Agent'}: ${msg.text}\n`;
     });
-    
+
     // Add language instruction
-    const languageInstruction = languageCode !== 'en' 
-        ? `\n[IMPORTANT: REPLY IN ${targetLang} LANGUAGE]\n` 
-        : "";
+    const languageInstruction = languageCode !== 'en'
+      ? `\n[IMPORTANT: REPLY IN ${targetLang} LANGUAGE]\n`
+      : "";
 
     promptContext += `User: ${newMessage}\nAgent:${languageInstruction}`;
 
@@ -80,7 +86,7 @@ export const sendMessageToGemini = async (
   } catch (error) {
     console.error("Gemini API Error:", error);
     if (error instanceof Error) {
-        return `Connection Error: ${error.message}`;
+      return `Connection Error: ${error.message}`;
     }
     return "Sorry, I am unable to connect to the server right now.";
   }
