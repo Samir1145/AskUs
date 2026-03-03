@@ -36,7 +36,7 @@ const MarketplaceView: React.FC<MarketplaceViewProps> = () => {
       name: 'Python Coder',
       author: 'DevTeam',
       description: 'Enhanced Python snippet generation and debugging capabilities.',
-      icon: <Code size={24} className="text-blue-500" />,
+      icon: <Code size={24} className="text-primary" />,
       installed: true, // Initially installed in DB seed
       version: '2.1.5'
     },
@@ -45,7 +45,7 @@ const MarketplaceView: React.FC<MarketplaceViewProps> = () => {
       name: 'Legal Eagle v2',
       author: 'LegalTech',
       description: 'Updated contract templates and case law references for 2024.',
-      icon: <Scale size={24} className="text-red-500" />,
+      icon: <Scale size={24} className="text-danger" />,
       installed: false,
       version: '2.0.0'
     },

@@ -2,17 +2,22 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Tab, Chat, Agent, Task, Message, Bill } from './types';
 import ChatsView from './views/ChatsView';
 import ChatDetailView from './views/ChatDetailView';
-import SettingsView from './views/SettingsView';
 import MediaGalleryView from './views/MediaGalleryView';
 import MapView from './views/MapView';
 import EventsView from './views/EventsView';
-import EatsView from './views/EatsView';
-import WalletView from './views/WalletView';
-import TribeCirclesView from './views/TribeCirclesView';
+import EventDetailView from './views/EventDetailView';
+import MenusView from './views/MenusView';
+import MenuDetailView from './views/MenuDetailView';
+import GroupsView from './views/GroupsView';
+import GroupDetailView from './views/GroupDetailView';
+import DashboardView from './views/DashboardView';
+import { RSVPProvider } from './contexts/RSVPContext';
+import { JoinedGroupsProvider } from './contexts/JoinedGroupsContext';
 import { dbService } from './services/db';
+import { seedIfEmpty } from './services/firebaseData';
 import { EXPERT_AGENTS_DATA, INDIAN_LANGUAGES } from './constants';
 import { TribeSanctumIcon, TribeLoungeIcon, TribeKitchenIcon, TribeCirclesIcon } from './components/TribeIcons';
-import { Headset, Armchair, Coffee, Users, Globe, Sun, Moon, Wallet, Archive, Settings, LogOut, X, Camera, Edit2, Check, Key } from 'lucide-react';
+import { Headset, Armchair, Coffee, Users, Globe, Sun, Moon, Archive, LogOut, X, Camera, Edit2, Check, Key, Home, Mic, ChevronLeft } from 'lucide-react';
 
 
 // Auth Views
@@ -20,6 +25,7 @@ import SplashScreen from './views/SplashScreen';
 import LoginView from './views/LoginView';
 import RegisterView from './views/RegisterView';
 import ForgotPasswordView from './views/ForgotPasswordView';
+import FranchiseView from './views/FranchiseView';
 
 // Initial Mock Data for Chats
 const INITIAL_CHATS: Chat[] = [
@@ -68,11 +74,16 @@ const INITIAL_BILLS: Bill[] = [
   { id: 'b_901', taskId: 't_128', description: 'Task: Draft response', amount: '₹80', date: new Date(Date.now() - 86400000), status: 'paid' },
 ];
 
-type AppView = 'SPLASH' | 'LOGIN' | 'REGISTER' | 'FORGOT_PASSWORD' | 'APP';
+type AppView = 'SPLASH' | 'LOGIN' | 'REGISTER' | 'FORGOT_PASSWORD' | 'APP' | 'FRANCHISE';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<AppView>('SPLASH');
-  const [activeTab, setActiveTab] = useState<Tab>(Tab.CHATS);
+  const [activeTab, setActiveTab] = useState<Tab>(Tab.DASHBOARD);
+
+  // When navigating tabs normally
+  const navigateToTab = (tab: Tab) => {
+    setActiveTab(tab);
+  };
 
   // Chat Data Stores
   const [chats, setChats] = useState<Chat[]>([]);
@@ -105,6 +116,16 @@ const App: React.FC = () => {
   // State for Gallery & Map
   const [viewingGalleryChatId, setViewingGalleryChatId] = useState<string | null>(null);
   const [viewingMap, setViewingMap] = useState<boolean>(false);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [selectedMenuId, setSelectedMenuId] = useState<string | null>(null);
+
+  const handleGlobalBack = () => {
+    if (selectedEventId) { setSelectedEventId(null); return; }
+    if (selectedGroupId) { setSelectedGroupId(null); return; }
+    if (selectedMenuId) { setSelectedMenuId(null); return; }
+    if (selectedChatId) { setSelectedChatId(null); return; }
+  };
 
   // Global Menu States
   const [showMenu, setShowMenu] = useState(false);
@@ -128,8 +149,15 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const handleToggleMenu = () => setShowMenu(prev => !prev);
+    const handleNavigateFranchise = () => setCurrentView('FRANCHISE');
+
     window.addEventListener('toggle-main-menu', handleToggleMenu);
-    return () => window.removeEventListener('toggle-main-menu', handleToggleMenu);
+    window.addEventListener('navigate-franchise', handleNavigateFranchise);
+
+    return () => {
+      window.removeEventListener('toggle-main-menu', handleToggleMenu);
+      window.removeEventListener('navigate-franchise', handleNavigateFranchise);
+    };
   }, []);
 
   const handleOpenProfileModal = () => {
@@ -174,6 +202,9 @@ const App: React.FC = () => {
           chat.messages.forEach(msg => dbService.saveMessage(chat.id, msg));
         });
       }
+
+      // Seed Firebase collections if they are empty
+      seedIfEmpty().catch(err => console.warn('Firebase seed skipped:', err));
     };
     initDatabase();
   }, []);
@@ -517,6 +548,19 @@ const App: React.FC = () => {
 
     // 4. Main Tabs
     switch (activeTab) {
+      case Tab.DASHBOARD:
+        return (
+          <DashboardView
+            onNavigate={(section) => {
+              switch (section) {
+                case 'chats': navigateToTab(Tab.CHATS); break;
+                case 'menus': navigateToTab(Tab.EATS); break;
+                case 'groups': navigateToTab(Tab.TRIBE_CIRCLES); break;
+                case 'events': navigateToTab(Tab.EVENTS); break;
+              }
+            }}
+          />
+        );
       case Tab.CHATS:
         return (
           <ChatsView
@@ -532,29 +576,175 @@ const App: React.FC = () => {
             onOpenMap={() => setViewingMap(true)}
             onAddMember={handleAddMember}
             onLogout={handleLogout}
-            onOpenSettings={() => setActiveTab(Tab.SETTINGS)}
-            onOpenWallet={() => setActiveTab(Tab.WALLET)}
             language={language}
             onLanguageChange={handleLanguageChange}
+            userProfile={userProfile}
           />
         );
       case Tab.EVENTS:
-        return <EventsView />;
+        if (selectedEventId) {
+          // Import this from EventsView or move to constants
+          const MOCK_EVENTS = [
+            {
+              id: '1',
+              title: 'Holi Fest Tricity Most Premium Holi Celebration',
+              date: 'Wed 4 Mar 2026',
+              time: '11:00 AM',
+              type: 'In-person' as const,
+              organizer: 'Taco Tribe',
+              rating: 4.8,
+              attendees: 79,
+              imageUrl: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=1200',
+              category: 'Holi Parties'
+            },
+            {
+              id: '2',
+              title: 'Build Autonomous AI Workers with Python & LangChain (Cohort)',
+              date: 'SAT, 28 FEB',
+              time: '7:00 PM IST',
+              type: 'Online' as const,
+              organizer: 'NonceLabs',
+              rating: 4.8,
+              attendees: 850,
+              imageUrl: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&q=80&w=800',
+              category: 'Tech'
+            },
+            {
+              id: '3',
+              title: 'Weekend Photography Walk: Capturing Urban Life',
+              date: 'SAT, 28 FEB',
+              time: '10:00 AM IST',
+              type: 'In-person' as const,
+              organizer: 'City Snappers Group',
+              rating: 4.6,
+              attendees: 42,
+              imageUrl: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&q=80&w=800',
+              category: 'Hobbies'
+            },
+            {
+              id: '4',
+              title: 'Startup Networking Mixer',
+              date: 'FRI, 27 FEB',
+              time: '6:00 PM IST',
+              type: 'In-person' as const,
+              organizer: 'Tech Founders Club',
+              rating: 4.5,
+              attendees: 120,
+              imageUrl: 'https://images.unsplash.com/photo-1515187029135-18ee286d815b?auto=format&fit=crop&q=80&w=800',
+              category: 'Social Events'
+            }
+          ];
+          const event = MOCK_EVENTS.find(e => e.id === selectedEventId);
+          if (event) {
+            return <EventDetailView event={event} onBack={() => setSelectedEventId(null)} />;
+          }
+        }
+        return (
+          <EventsView
+            onSelectEvent={(id) => setSelectedEventId(id)}
+            userProfile={userProfile}
+          />
+        );
       case Tab.EATS:
-        return <EatsView />;
-      case Tab.WALLET:
-        return <WalletView />;
+        if (selectedMenuId) {
+          const ALL_ITEMS = [
+            { id: 's1', title: 'Creamy Mayo Egg Sandwich', description: 'Whole wheat bread, boiled egg mix with mustard mayo', price: 150, image: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&w=800' },
+            { id: 's2', title: 'Pesto, Mozzarella Sandwich', description: 'Ciabatta, fresh mozzarella, inhouse basil pesto roasted bell pepper, rocket leaf', price: 220, image: 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=800' },
+            { id: 's3', title: 'Original Ham & Cheese Sandwich', description: 'Multigrain bread, cured chicken ham, cheese and lettuce', price: 250, image: 'https://images.unsplash.com/photo-1554522434-c088febe4dc4?auto=format&fit=crop&w=800' },
+            { id: 's4', title: 'Grilled Chicken Sandwich', description: 'Multigrain bread, marinated grilled chicken, cheese spread, barbeque sauce', price: 230, image: 'https://images.unsplash.com/photo-1528736235302-52922df5c122?auto=format&fit=crop&w=800' },
+            { id: 's5', title: 'Chicken Sausage & Cheese Crossiant Sandwich', description: 'Chicken sausage, croissant, cheese, tomato, lettuce', price: 260, image: 'https://images.unsplash.com/photo-1626078722880-9286d5e0a6d5?auto=format&fit=crop&w=800' },
+            { id: 'w1', title: 'BBQ CHICKEN BURRITO', description: 'Tender chicken in rich BBQ sauce wrapped in a tortilla', price: 230, image: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?auto=format&fit=crop&w=800' },
+            { id: 'w2', title: 'BBQ PANEER BURRITO', description: 'Paneer cubes in rich BBQ sauce wrapped in a tortilla', price: 210, image: 'https://images.unsplash.com/photo-1574044199105-0aa3df7ca878?auto=format&fit=crop&w=800' },
+            { id: 'b1', title: 'BBQ CHICKEN BOWL', description: 'Tender chicken in rich BBQ sauce with rice', price: 280, image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800' },
+            { id: 'bev1', title: 'Classic Cold Coffee', description: 'Rich and creamy cold coffee', price: 150, image: 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?auto=format&fit=crop&w=800' }
+          ];
+          const item = ALL_ITEMS.find(i => i.id === selectedMenuId);
+          if (item) {
+            return <MenuDetailView item={item} onBack={() => setSelectedMenuId(null)} />;
+          }
+        }
+        return (
+          <MenusView
+            onSelectItem={(id) => setSelectedMenuId(id)}
+            userProfile={userProfile}
+          />
+        );
+
       case Tab.TRIBE_CIRCLES:
-        return <TribeCirclesView onOpenMap={() => setViewingMap(true)} />;
-      case Tab.SETTINGS:
-        return <SettingsView onLogout={handleLogout} onBack={() => setActiveTab(Tab.CHATS)} />;
+        if (selectedGroupId) {
+          const CIRCLES = [
+            { id: '1', name: 'Weekend Hikers', category: 'Fitness', image: 'https://images.unsplash.com/photo-1551632811-561732d1e306?auto=format&fit=crop&q=80&w=1200', likes: 142 },
+            { id: '2', name: 'Startup Founders', category: 'Tech', image: 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&q=80&w=1200', likes: 385 },
+            { id: '3', name: 'Local Bookworms', category: 'Arts', image: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?auto=format&fit=crop&q=80&w=1200', likes: 89 },
+            { id: '4', name: 'Yoga & Mindfulness', category: 'Fitness', image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=1200', likes: 215 },
+            { id: '5', name: 'Foodie Adventurers', category: 'Food', image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=1200', likes: 120 }
+          ];
+          const group = CIRCLES.find(c => c.id === selectedGroupId);
+          if (group) {
+            return <GroupDetailView group={group} onBack={() => setSelectedGroupId(null)} />;
+          }
+        }
+        return (
+          <GroupsView
+            onOpenMap={() => setViewingMap(true)}
+            onSelectGroup={(id) => setSelectedGroupId(id)}
+            userProfile={userProfile}
+          />
+        );
+      case Tab.EATS:
+        if (selectedMenuId) {
+          const ALL_ITEMS = [
+            { id: 's1', title: 'Creamy Mayo Egg Sandwich', description: 'Whole wheat bread, boiled egg mix with mustard mayo', price: 150, image: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&w=800' },
+            { id: 's2', title: 'Pesto, Mozzarella Sandwich', description: 'Ciabatta, fresh mozzarella, inhouse basil pesto roasted bell pepper, rocket leaf', price: 220, image: 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=800' },
+            { id: 's3', title: 'Original Ham & Cheese Sandwich', description: 'Multigrain bread, cured chicken ham, cheese and lettuce', price: 250, image: 'https://images.unsplash.com/photo-1554522434-c088febe4dc4?auto=format&fit=crop&w=800' },
+            { id: 's4', title: 'Grilled Chicken Sandwich', description: 'Multigrain bread, marinated grilled chicken, cheese spread, barbeque sauce', price: 230, image: 'https://images.unsplash.com/photo-1528736235302-52922df5c122?auto=format&fit=crop&w=800' },
+            { id: 's5', title: 'Chicken Sausage & Cheese Crossiant Sandwich', description: 'Chicken sausage, croissant, cheese, tomato, lettuce', price: 260, image: 'https://images.unsplash.com/photo-1626078722880-9286d5e0a6d5?auto=format&fit=crop&w=800' },
+            { id: 'w1', title: 'BBQ CHICKEN BURRITO', description: 'Tender chicken in rich BBQ sauce wrapped in a tortilla', price: 230, image: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?auto=format&fit=crop&w=800' },
+            { id: 'w2', title: 'BBQ PANEER BURRITO', description: 'Paneer cubes in rich BBQ sauce wrapped in a tortilla', price: 210, image: 'https://images.unsplash.com/photo-1574044199105-0aa3df7ca878?auto=format&fit=crop&w=800' },
+            { id: 'b1', title: 'BBQ CHICKEN BOWL', description: 'Tender chicken in rich BBQ sauce with rice', price: 280, image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800' },
+            { id: 'bev1', title: 'Classic Cold Coffee', description: 'Rich and creamy cold coffee', price: 150, image: 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?auto=format&fit=crop&w=800' }
+          ];
+          const item = ALL_ITEMS.find(i => i.id === selectedMenuId);
+          if (item) {
+            return <MenuDetailView item={item} onBack={() => setSelectedMenuId(null)} />;
+          }
+        }
+        return (
+          <MenusView
+            onSelectItem={(id) => setSelectedMenuId(id)}
+            userProfile={userProfile}
+          />
+        );
+
+      case Tab.TRIBE_CIRCLES:
+        if (selectedGroupId) {
+          const CIRCLES = [
+            { id: '1', name: 'Weekend Hikers', category: 'Fitness', image: 'https://images.unsplash.com/photo-1551632811-561732d1e306?auto=format&fit=crop&q=80&w=1200', likes: 142 },
+            { id: '2', name: 'Startup Founders', category: 'Tech', image: 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&q=80&w=1200', likes: 385 },
+            { id: '3', name: 'Local Bookworms', category: 'Arts', image: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?auto=format&fit=crop&q=80&w=1200', likes: 89 },
+            { id: '4', name: 'Yoga & Mindfulness', category: 'Fitness', image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=1200', likes: 215 },
+            { id: '5', name: 'Foodie Adventurers', category: 'Food', image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=1200', likes: 120 }
+          ];
+          const group = CIRCLES.find(c => c.id === selectedGroupId);
+          if (group) {
+            return <GroupDetailView group={group} onBack={() => setSelectedGroupId(null)} />;
+          }
+        }
+        return (
+          <GroupsView
+            onOpenMap={() => setViewingMap(true)}
+            onSelectGroup={(id) => setSelectedGroupId(id)}
+            userProfile={userProfile}
+          />
+        );
+
       default:
         return null;
     }
   };
 
   const renderApp = () => {
-    const showBottomNav = !selectedChatId && !viewingGalleryChatId && !viewingMap && currentView === 'APP' && activeTab !== Tab.SETTINGS;
+    const showBottomNav = !viewingGalleryChatId && !viewingMap && currentView === 'APP';
 
     switch (currentView) {
       case 'SPLASH':
@@ -582,6 +772,10 @@ const App: React.FC = () => {
             onNavigateToLogin={() => setCurrentView('LOGIN')}
           />
         );
+      case 'FRANCHISE':
+        return (
+          <FranchiseView onBack={() => setCurrentView('APP')} />
+        );
       case 'APP':
         return (
           <div className="flex flex-col h-full bg-white dark:bg-gray-900 relative shadow-xl overflow-hidden animate-in fade-in duration-500">
@@ -592,7 +786,7 @@ const App: React.FC = () => {
               {showMenu && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)}></div>
-                  <div className="absolute top-[70px] left-4 w-64 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 z-50 py-2 animate-in fade-in zoom-in-95 duration-100 origin-top-left flex flex-col">
+                  <div className="absolute top-[70px] right-4 w-64 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 z-50 py-2 animate-in fade-in zoom-in-95 duration-100 origin-top-right flex flex-col">
                     <button onClick={() => { setShowMenu(false); handleOpenProfileModal(); }} className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-3 transition-colors">
                       <div className="relative flex-shrink-0">
                         <img src={userProfile.avatar} alt="Profile" className="w-10 h-10 rounded-full object-cover border border-gray-100 dark:border-gray-700" />
@@ -613,18 +807,10 @@ const App: React.FC = () => {
                     <button onClick={() => { setShowMenu(false); setShowApiKeyModal(true); }} className="w-full text-left px-4 py-3 text-sm font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors dark:text-gray-200 dark:hover:bg-gray-800">
                       <Key size={18} />API Key
                     </button>
-                    <button onClick={() => { setShowMenu(false); setActiveTab(Tab.WALLET); }} className="w-full text-left px-4 py-3 text-sm font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors dark:text-gray-200 dark:hover:bg-gray-800">
-                      <Wallet size={18} />Wallet
-                    </button>
+
+
                     <div className="h-px bg-gray-100 dark:bg-gray-800 my-1 mx-4" />
-                    <button onClick={() => { setShowMenu(false); setActiveTab(Tab.CHATS); window.dispatchEvent(new Event('toggle-archive')); }} className="w-full text-left px-4 py-3 text-sm font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors dark:text-gray-200 dark:hover:bg-gray-800">
-                      <Archive size={18} />Archive
-                    </button>
-                    <button onClick={() => { setShowMenu(false); setActiveTab(Tab.SETTINGS); }} className="w-full text-left px-4 py-3 text-sm font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors dark:text-gray-200 dark:hover:bg-gray-800">
-                      <Settings size={18} />Settings
-                    </button>
-                    <div className="h-px bg-gray-100 dark:bg-gray-800 my-1 mx-4" />
-                    <button onClick={() => { setShowMenu(false); handleLogout(); }} className="w-full text-left px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 flex items-center gap-3 transition-colors">
+                    <button onClick={() => { setShowMenu(false); handleLogout(); }} className="w-full text-left px-4 py-3 text-sm font-bold text-danger hover:bg-red-50 dark:hover:bg-red-900/10 flex items-center gap-3 transition-colors">
                       <LogOut size={18} />Logout
                     </button>
                   </div>
@@ -733,34 +919,107 @@ const App: React.FC = () => {
                       <rect width="100%" height="100%" fill="url(#tribal-line-bottom)" />
                     </svg>
                   </div>
-                  <div className="flex justify-around items-center py-3 pb-6 w-full">
+
+                  {/* Default 4-icon nav (Dashboard tab) */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      display: 'flex',
+                      justifyContent: 'space-around',
+                      alignItems: 'center',
+                      paddingTop: '12px',
+                      paddingBottom: '24px',
+                      opacity: activeTab === Tab.DASHBOARD ? 1 : 0,
+                      transform: activeTab === Tab.DASHBOARD ? 'translateY(0)' : 'translateY(16px)',
+                      pointerEvents: activeTab === Tab.DASHBOARD ? 'auto' : 'none',
+                      transition: 'opacity 0.3s ease, transform 0.3s ease',
+                    }}
+                  >
                     <button
-                      onClick={() => setActiveTab(Tab.CHATS)}
-                      className={`flex flex-col items-center gap-1 transition-colors ${activeTab === Tab.CHATS ? 'text-primary' : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'}`}
+                      onClick={() => navigateToTab(Tab.CHATS)}
+                      className="flex flex-col items-center gap-1 transition-colors text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                     >
-                      <TribeSanctumIcon size={28} active={activeTab === Tab.CHATS} className={activeTab === Tab.CHATS ? 'text-primary' : ''} />
-                      <span className="text-[11px] font-black uppercase">SANCTUM</span>
+                      <TribeSanctumIcon size={28} active={false} />
+                      <span className="text-[11px] font-black uppercase">CHATS</span>
                     </button>
                     <button
-                      onClick={() => setActiveTab(Tab.EVENTS)}
-                      className={`flex flex-col items-center gap-1 transition-colors ${activeTab === Tab.EVENTS ? 'text-primary' : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'}`}
+                      onClick={() => navigateToTab(Tab.EATS)}
+                      className="flex flex-col items-center gap-1 transition-colors text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                     >
-                      <TribeLoungeIcon size={28} active={activeTab === Tab.EVENTS} className={activeTab === Tab.EVENTS ? 'text-primary' : ''} />
-                      <span className="text-[11px] font-black uppercase">LOUNGE</span>
+                      <TribeKitchenIcon size={28} active={false} />
+                      <span className="text-[11px] font-black uppercase">MENUS</span>
                     </button>
                     <button
-                      onClick={() => setActiveTab(Tab.EATS)}
-                      className={`flex flex-col items-center gap-1 transition-colors ${activeTab === Tab.EATS ? 'text-primary' : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'}`}
+                      onClick={() => navigateToTab(Tab.TRIBE_CIRCLES)}
+                      className="flex flex-col items-center gap-1 transition-colors text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                     >
-                      <TribeKitchenIcon size={28} active={activeTab === Tab.EATS} className={activeTab === Tab.EATS ? 'text-primary' : ''} />
-                      <span className="text-[11px] font-black uppercase">KITCHEN</span>
+                      <TribeCirclesIcon size={28} active={false} />
+                      <span className="text-[11px] font-black uppercase">GROUPS</span>
                     </button>
                     <button
-                      onClick={() => setActiveTab(Tab.TRIBE_CIRCLES)}
-                      className={`flex flex-col items-center gap-1 transition-colors ${activeTab === Tab.TRIBE_CIRCLES ? 'text-primary' : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'}`}
+                      onClick={() => navigateToTab(Tab.EVENTS)}
+                      className="flex flex-col items-center gap-1 transition-colors text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                     >
-                      <TribeCirclesIcon size={28} active={activeTab === Tab.TRIBE_CIRCLES} className={activeTab === Tab.TRIBE_CIRCLES ? 'text-primary' : ''} />
-                      <span className="text-[11px] font-black uppercase">TRIBES</span>
+                      <TribeLoungeIcon size={28} active={false} />
+                      <span className="text-[11px] font-black uppercase">EVENTS</span>
+                    </button>
+                  </div>
+
+                  {/* Compact nav: Home + "I want to..." + Sparkle (non-Dashboard tabs) */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      paddingTop: '12px',
+                      paddingBottom: '24px',
+                      paddingLeft: '16px',
+                      paddingRight: '16px',
+                      opacity: activeTab !== Tab.DASHBOARD ? 1 : 0,
+                      transform: activeTab !== Tab.DASHBOARD ? 'translateY(0)' : 'translateY(16px)',
+                      pointerEvents: activeTab !== Tab.DASHBOARD ? 'auto' : 'none',
+                      transition: 'opacity 0.3s ease, transform 0.3s ease',
+                    }}
+                  >
+                    {/* Global Back Button (before the home icon) */}
+                    {(selectedEventId || selectedGroupId || selectedMenuId || selectedChatId) && (
+                      <button
+                        onClick={handleGlobalBack}
+                        className="flex-shrink-0 p-1 mr-1 transition-transform active:scale-90"
+                        aria-label="Go Back"
+                      >
+                        <ChevronLeft size={28} className="text-[#6B21A8]" strokeWidth={2} />
+                      </button>
+                    )}
+
+                    {/* Home Icon (hidden on detail pages) */}
+                    {!(selectedEventId || selectedGroupId || selectedMenuId || selectedChatId) && (
+                      <button
+                        onClick={() => navigateToTab(Tab.DASHBOARD)}
+                        className="flex-shrink-0 p-1 transition-transform active:scale-90"
+                        aria-label="Go Home"
+                      >
+                        <Home size={26} className="text-[#6B21A8]" strokeWidth={2} />
+                      </button>
+                    )}
+
+                    {/* "I want to..." pill */}
+                    <div
+                      className="flex-1 flex items-center bg-gray-100 dark:bg-gray-800 rounded-full px-5 py-3 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                      style={{ minHeight: '46px' }}
+                    >
+                      <span className="text-gray-400 dark:text-gray-500 text-[13px] font-medium select-none">I would like to suggest that...</span>
+                    </div>
+
+                    {/* Mic Icon */}
+                    <button
+                      className="flex-shrink-0 p-1 transition-transform active:scale-90"
+                      aria-label="Voice Input"
+                    >
+                      <Mic size={24} className="text-[#6B21A8]" strokeWidth={2} />
                     </button>
                   </div>
                 </div>
@@ -774,11 +1033,15 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex justify-center min-h-screen bg-gray-100 dark:bg-gray-950">
-      <div className="w-full max-w-[480px] bg-white dark:bg-gray-900 h-[100dvh] flex flex-col relative shadow-xl overflow-hidden">
-        {renderApp()}
-      </div>
-    </div>
+    <RSVPProvider>
+      <JoinedGroupsProvider>
+        <div className="flex justify-center min-h-screen bg-gray-100 dark:bg-gray-950">
+          <div className="w-full max-w-[480px] bg-white dark:bg-gray-900 h-[100dvh] flex flex-col relative shadow-xl overflow-hidden">
+            {renderApp()}
+          </div>
+        </div>
+      </JoinedGroupsProvider>
+    </RSVPProvider>
   );
 };
 

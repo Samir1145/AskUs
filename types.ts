@@ -84,10 +84,9 @@ export interface Call {
 }
 
 export enum Tab {
+  DASHBOARD = 'Dashboard',
   CHATS = 'Tribe Sanctum',
   EVENTS = 'Tribe Lounge',
   EATS = 'Tribe Kitchen',
-  WALLET = 'Wallet',
-  TRIBE_CIRCLES = 'Tribe Circles',
-  SETTINGS = 'Settings'
+  TRIBE_CIRCLES = 'Tribe Circles'
 }

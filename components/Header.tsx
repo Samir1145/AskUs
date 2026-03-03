@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, MessageSquarePlus, ArrowLeft } from 'lucide-react';
+import { Search, MoreVertical, ArrowLeft, Bell, Settings } from 'lucide-react';
 
 interface HeaderProps {
   title?: string;
@@ -11,6 +11,8 @@ interface HeaderProps {
   showBack?: boolean;
   onBack?: () => void;
 }
+
+
 
 const Header: React.FC<HeaderProps> = ({
   title,
@@ -35,11 +37,14 @@ const Header: React.FC<HeaderProps> = ({
               <ArrowLeft size={28} strokeWidth={2.5} />
             </button>
           ) : (
-            <button onClick={() => window.dispatchEvent(new Event('toggle-main-menu'))} className="focus:outline-none focus:ring-2 focus:ring-primary/20 rounded-lg">
+            <button
+              onClick={() => window.dispatchEvent(new Event('navigate-franchise'))}
+              className="flex items-center h-[60px] focus:outline-none focus:ring-2 focus:ring-primary/20 rounded-lg group"
+            >
               <img
                 src="/taco-tribe-logo.png"
-                alt="Taco Tribe Logo - Tap for Menu"
-                className="h-[60px] w-auto object-contain cursor-pointer transition-transform hover:scale-105"
+                alt="Taco Tribe Logo - Tap for Franchise Info"
+                className="h-full w-auto object-contain cursor-pointer transition-transform group-hover:scale-105"
               />
             </button>
           )}
@@ -51,13 +56,20 @@ const Header: React.FC<HeaderProps> = ({
           </h1>
         )}
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-0">
           <button
-            onClick={onNewChat}
-            className={`flex items-center justify-center text-gray-400 hover:text-gray-600 border border-gray-200 rounded-xl bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${newChatLabel ? 'px-3 py-2 gap-2 w-auto' : 'w-10 h-10'}`}
+            onClick={() => window.dispatchEvent(new Event('toggle-main-menu'))}
+            className="flex items-center justify-center transition-colors w-10 h-10 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-[#6B21A8] dark:text-[#6B21A8]"
+            aria-label="Open Settings"
           >
-            {newChatLabel && <span className="text-sm font-bold text-gray-700 dark:text-gray-300">{newChatLabel}</span>}
-            {newChatIcon || <MessageSquarePlus size={20} />}
+            <Settings size={24} strokeWidth={2.5} />
+          </button>
+          <button
+            onClick={() => window.dispatchEvent(new Event('open-notifications'))}
+            className="flex items-center justify-center transition-colors w-10 h-10 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-[#6B21A8] dark:text-[#6B21A8]"
+            aria-label="Notifications"
+          >
+            <Bell size={24} strokeWidth={2.5} />
           </button>
         </div>
       </div>
@@ -67,15 +79,15 @@ const Header: React.FC<HeaderProps> = ({
         <svg width="100%" height="5" preserveAspectRatio="none" className="absolute bottom-0">
           <defs>
             <pattern id="tribal-line" x="0" y="0" width="32" height="5" patternUnits="userSpaceOnUse">
-              {/* Golden Yellow Background */}
-              <rect width="32" height="5" fill="#fcd34d" />
-              {/* Deep Red Zigzag */}
-              <path d="M0 5 L8 0 L16 5 L24 0 L32 5" fill="none" stroke="#dc2626" strokeWidth="1.5" strokeLinejoin="miter" />
-              {/* Vibrant Orange Zigzag */}
-              <path d="M0 5 L4 2.5 L8 5 L12 2.5 L16 5 L20 2.5 L24 5 L28 2.5 L32 5" fill="none" stroke="#ea580c" strokeWidth="1" strokeLinejoin="miter" />
-              {/* Dark Brown Dots */}
-              <circle cx="8" cy="3.5" r="0.75" fill="#451a03" />
-              <circle cx="24" cy="3.5" r="0.75" fill="#451a03" />
+              {/* Brand Yellow Background */}
+              <rect width="32" height="5" fill="#EAB308" />
+              {/* Brand Red Zigzag */}
+              <path d="M0 5 L8 0 L16 5 L24 0 L32 5" fill="none" stroke="#DC2626" strokeWidth="1.5" strokeLinejoin="miter" />
+              {/* Brand Orange Zigzag */}
+              <path d="M0 5 L4 2.5 L8 5 L12 2.5 L16 5 L20 2.5 L24 5 L28 2.5 L32 5" fill="none" stroke="#EA580C" strokeWidth="1" strokeLinejoin="miter" />
+              {/* Brand Purple Dots */}
+              <circle cx="8" cy="3.5" r="0.75" fill="#6B21A8" />
+              <circle cx="24" cy="3.5" r="0.75" fill="#6B21A8" />
             </pattern>
           </defs>
           <rect width="100%" height="100%" fill="url(#tribal-line)" />

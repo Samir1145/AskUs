@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Chat, Agent } from '../types';
-import { Mic, Plus, X, MessageCircle, Settings, ArrowLeft, Image as ImageIcon, Archive, Pin, Sparkles, Users, Phone, Trash2, LogOut, ChevronRight, Check, Edit2, Camera, MessageSquarePlus, Map, Wand2, Loader2, Moon, Sun, Globe, Wallet } from 'lucide-react';
+import { Mic, Plus, X, MessageCircle, Settings, ArrowLeft, Image as ImageIcon, Pin, Sparkles, Users, Phone, Trash2, LogOut, ChevronRight, Check, Edit2, Camera, MessageSquarePlus, Map, Wand2, Loader2, Moon, Sun, Globe, Wallet, MoreVertical } from 'lucide-react';
 import Header from '../components/Header';
 import {
     getAvatarColor, getInitials,
@@ -30,12 +30,12 @@ const IncognitoIcon = ({ size = 24, className = "" }: { size?: number, className
 );
 
 const CONTEXT_CATEGORIES = [
-    { id: 'body', label: 'Body', color: 'bg-blue-700' },
-    { id: 'mind', label: 'Mind', color: 'bg-cyan-500' },
-    { id: 'spirit', label: 'Spirit', color: 'bg-lime-500' },
-    { id: 'relations', label: 'Relations', color: 'bg-red-600' },
-    { id: 'finances', label: 'Finances', color: 'bg-orange-500' },
-    { id: 'work', label: 'Work', color: 'bg-purple-600' },
+    { id: 'body', label: 'Body', color: 'bg-secondary' },   // Brand Yellow
+    { id: 'mind', label: 'Mind', color: 'bg-primary' },     // Brand Purple
+    { id: 'spirit', label: 'Spirit', color: 'bg-accent' },   // Brand Orange
+    { id: 'relations', label: 'Relations', color: 'bg-danger' }, // Brand Red
+    { id: 'finances', label: 'Finances', color: 'bg-accent' },   // Brand Orange
+    { id: 'work', label: 'Work', color: 'bg-primary' },     // Brand Purple
 ];
 
 interface ChatsViewProps {
@@ -51,10 +51,13 @@ interface ChatsViewProps {
     onOpenMap: (id: string) => void;
     onAddMember: (id: string, member: Agent) => void;
     onLogout: () => void;
-    onOpenSettings: () => void;
-    onOpenWallet: () => void;
     language: string;
     onLanguageChange: (lang: string) => void;
+    userProfile?: {
+        name: string;
+        avatar: string;
+        membership: string;
+    };
 }
 
 interface SwipeableChatRowProps {
@@ -96,7 +99,7 @@ const SwipeableChatRow: React.FC<SwipeableChatRowProps> = ({
 
     const getAgentBadgeColor = (name: string) => {
         const colors = [
-            'text-blue-700 bg-blue-100 dark:text-blue-300 dark:bg-blue-900/40',
+            'text-primary bg-blue-100 dark:text-blue-300 dark:bg-blue-900/40',
             'text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-900/40',
             'text-purple-700 bg-purple-100 dark:text-purple-300 dark:bg-purple-900/40',
             'text-pink-700 bg-pink-100 dark:text-pink-300 dark:bg-pink-900/40',
@@ -113,9 +116,17 @@ const SwipeableChatRow: React.FC<SwipeableChatRowProps> = ({
     // Extract Category from initial context if it exists
     const firstMsg = chat.messages[0];
     let chatCategory = '';
-    if (firstMsg?.text && firstMsg.text.startsWith('[Category: ')) {
-        const match = firstMsg.text.match(/\[Category:\s*([^\]]+)\]/);
-        if (match) chatCategory = match[1];
+    let chatDescription = '';
+    if (firstMsg?.text) {
+        if (firstMsg.text.startsWith('[Category: ')) {
+            const match = firstMsg.text.match(/\[Category:\s*([^\]]+)\]\n?(.*)/s);
+            if (match) {
+                chatCategory = match[1];
+                chatDescription = match[2] || '';
+            }
+        } else {
+            chatDescription = firstMsg.text;
+        }
     }
 
     // Drag Logic
@@ -145,7 +156,7 @@ const SwipeableChatRow: React.FC<SwipeableChatRowProps> = ({
 
         let finalOffset = 0;
         if (currentOffset > threshold) {
-            finalOffset = 150; // Snap open left (Pin + Archive)
+            finalOffset = 150; // Snap open left (Pin + Delete)
         } else if (currentOffset < -threshold) {
             finalOffset = -150; // Snap open right (Maps + Call)
         } else {
@@ -195,34 +206,24 @@ const SwipeableChatRow: React.FC<SwipeableChatRowProps> = ({
 
     return (
         <div className={`relative overflow-hidden w-full select-none border-b ${isIncognito ? 'border-gray-800 bg-gray-900' : 'border-gray-50 bg-gray-100 dark:border-gray-800 dark:bg-gray-800'}`}>
-            {/* Actions Layer - Left (Visible when swiping RIGHT -> Shows Pin & Archive OR Delete & Unarchive) */}
+            {/* Actions Layer - Left (Visible when swiping RIGHT -> Shows Pin & Delete) */}
             <div className="absolute inset-y-0 left-0 flex h-full" style={{ width: '150px' }}>
-                {chat.isArchived ? (
-                    <button
-                        onClick={() => handleActionClick('delete')}
-                        className="flex-1 bg-red-600 text-white flex flex-col items-center justify-center gap-1 active:bg-red-700 transition-colors"
-                    >
-                        <Trash2 size={24} />
-                        <span className="text-[10px] font-bold">Delete</span>
-                    </button>
-                ) : (
-                    <button
-                        onClick={() => handleActionClick('pin')}
-                        className="flex-1 bg-gray-500 text-white flex flex-col items-center justify-center gap-1 active:bg-gray-600 transition-colors"
-                    >
-                        {chat.isPinned ? <div className="relative"><Pin size={24} /><div className="absolute inset-0 flex items-center justify-center"><div className="w-8 h-0.5 bg-white rotate-45 transform origin-center"></div></div></div> : <Pin size={24} fill="currentColor" />}
-                        <span className="text-[10px] font-bold">
-                            {chat.isPinned ? 'Unpin' : 'Pin'}
-                        </span>
-                    </button>
-                )}
+                <button
+                    onClick={() => handleActionClick('pin')}
+                    className="flex-1 bg-gray-500 text-white flex flex-col items-center justify-center gap-1 active:bg-gray-600 transition-colors"
+                >
+                    {chat.isPinned ? <div className="relative"><Pin size={24} /><div className="absolute inset-0 flex items-center justify-center"><div className="w-8 h-0.5 bg-white rotate-45 transform origin-center"></div></div></div> : <Pin size={24} fill="currentColor" />}
+                    <span className="text-[10px] font-bold">
+                        {chat.isPinned ? 'Unpin' : 'Pin'}
+                    </span>
+                </button>
 
                 <button
-                    onClick={() => handleActionClick('archive')}
-                    className="flex-1 bg-[#1d8f76] text-white flex flex-col items-center justify-center gap-1 active:bg-teal-700 transition-colors"
+                    onClick={() => handleActionClick('delete')}
+                    className="flex-1 bg-red-600 text-white flex flex-col items-center justify-center gap-1 active:bg-red-700 transition-colors"
                 >
-                    <Archive size={24} />
-                    <span className="text-[10px] font-bold">{chat.isArchived ? 'Unarchive' : 'Archive'}</span>
+                    <Trash2 size={24} />
+                    <span className="text-[10px] font-bold">Delete</span>
                 </button>
             </div>
 
@@ -265,7 +266,7 @@ const SwipeableChatRow: React.FC<SwipeableChatRowProps> = ({
                 </div>
 
                 <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-                    <div className="flex justify-between items-baseline">
+                    <div className="flex justify-between items-baseline mb-0.5">
                         <div className="flex items-center gap-1 min-w-0 pr-2">
                             <h2 className={`text-base font-bold truncate ${isIncognito ? 'text-gray-100' : 'text-gray-900 dark:text-gray-100'}`}>{displayTitle}</h2>
                             {chat.isIncognito && <IncognitoIcon size={14} className="text-gray-400 flex-shrink-0" />}
@@ -278,7 +279,13 @@ const SwipeableChatRow: React.FC<SwipeableChatRowProps> = ({
                         </div>
                     </div>
 
-                    <div className="flex items-center justify-between gap-1 mt-0.5">
+                    {chatDescription && (
+                        <p className={`text-[13px] font-medium line-clamp-1 leading-snug mb-1 ${isIncognito ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                            {chatDescription}
+                        </p>
+                    )}
+
+                    <div className="flex items-center justify-between gap-1">
                         <div className="flex gap-1.5 overflow-x-auto scrollbar-hide flex-1 items-center">
                             {agentList.map((agent, index) => (
                                 <span key={index} className={`text-[9px] font-bold px-1.5 py-0.5 rounded-sm whitespace-nowrap ${getAgentBadgeColor(agent)}`}>
@@ -304,37 +311,17 @@ const SUPERVISOR_AGENT: Agent = {
     isVerified: true
 };
 
-const ChatsView: React.FC<ChatsViewProps> = ({ chats, isIncognito, isDarkMode, onToggleDarkMode, onToggleIncognito, onSelectChat, onCreateChat, onChatAction, onOpenGallery, onOpenMap, onAddMember, onLogout, onOpenSettings, onOpenWallet, language, onLanguageChange }) => {
+const ChatsView: React.FC<ChatsViewProps> = ({ chats, isIncognito, isDarkMode, onToggleDarkMode, onToggleIncognito, onSelectChat, onCreateChat, onChatAction, onOpenGallery, onOpenMap, onAddMember, onLogout, language, onLanguageChange, userProfile }) => {
     const [searchQuery, setSearchQuery] = useState('');
-    const [activeTag, setActiveTag] = useState<string>('All');
+    const [activeTag, setActiveTag] = useState<string>('All Chats');
     const [showCreateModal, setShowCreateModal] = useState(false);
-    const [showMenu, setShowMenu] = useState(false);
     const [showLanguageModal, setShowLanguageModal] = useState(false);
 
-    // Profile State
-    const [userProfile, setUserProfile] = useState({
-        name: "John Doe",
-        avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuB-hWMD7_tY-hR-BNbyoZ00e0W2Hq6RP0mvZGwlihlhrq9WsDZ3R3P9Sz2olgYZc9ULr-YRUuOGbiqgju2_dgK5Xet8tJKsTITGhifE6dAWFb9TANSc1945T9RDq6lGLtBgT5XuGLEogulwCtIxnd281afH7TgINMw4C4_Y-BTK4ym-dnOCwSgEaVaPhOcDIX0VseTaC1KOU6dF3ToVszHJ71YhNHP7LkavuyaA0Sax_um1RkejDDcAby8X-YDPPsCciSF49Mq8sBoI",
-        membership: "Pro Member"
-    });
-
-    // Profile Editing Modal State
-    const [showProfileModal, setShowProfileModal] = useState(false);
-    const [tempProfile, setTempProfile] = useState(userProfile);
-    const profileImageInputRef = useRef<HTMLInputElement>(null);
-
-    // New Chat Form State
     const [newChatTitle, setNewChatTitle] = useState('');
     const [newChatDescription, setNewChatDescription] = useState('');
     const [selectedContextCategory, setSelectedContextCategory] = useState<string>(CONTEXT_CATEGORIES[0].label);
 
-    const [isArchivedView, setIsArchivedView] = useState(false);
 
-    useEffect(() => {
-        const handleToggleArchive = () => setIsArchivedView(true);
-        window.addEventListener('toggle-archive', handleToggleArchive);
-        return () => window.removeEventListener('toggle-archive', handleToggleArchive);
-    }, []);
 
     // STT State for New Chat
     const recognitionRef = useRef<any>(null);
@@ -400,32 +387,6 @@ const ChatsView: React.FC<ChatsViewProps> = ({ chats, isIncognito, isDarkMode, o
         }
     };
 
-    const handleOpenProfileModal = () => {
-        setTempProfile(userProfile);
-        setShowProfileModal(true);
-    };
-
-    const handleSaveProfile = () => {
-        if (tempProfile.name.trim()) {
-            setUserProfile(tempProfile);
-            setShowProfileModal(false);
-        }
-    };
-
-    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = async (ev) => {
-                if (ev.target?.result) {
-                    const base64 = ev.target!.result as string;
-                    setTempProfile(prev => ({ ...prev, avatar: base64 }));
-                }
-            };
-            reader.readAsDataURL(file);
-        }
-    };
-
     const filteredChats = chats
         .filter(chat => {
             const query = searchQuery.toLowerCase();
@@ -433,7 +394,7 @@ const ChatsView: React.FC<ChatsViewProps> = ({ chats, isIncognito, isDarkMode, o
             const lastMsg = chat.messages[chat.messages.length - 1]?.text?.toLowerCase() || '';
 
             const matchesSearch = title.includes(query) || lastMsg.includes(query);
-            const matchesView = isArchivedView ? chat.isArchived : !chat.isArchived;
+            const matchesView = !chat.isArchived;
 
             let chatCategory = '';
             const firstMsg = chat.messages[0];
@@ -442,7 +403,7 @@ const ChatsView: React.FC<ChatsViewProps> = ({ chats, isIncognito, isDarkMode, o
                 if (match) chatCategory = match[1];
             }
 
-            const matchesTag = activeTag === 'All' || chatCategory === activeTag;
+            const matchesTag = activeTag === 'All Chats' || chatCategory === activeTag;
 
             return matchesView && matchesSearch && matchesTag;
         })
@@ -478,104 +439,6 @@ const ChatsView: React.FC<ChatsViewProps> = ({ chats, isIncognito, isDarkMode, o
 
     return (
         <div className={`flex flex-col h-full relative transition-colors duration-300 ${isIncognito ? 'bg-gray-900' : 'bg-white dark:bg-gray-950'}`}>
-            {/* Common Header */}
-            <div className="relative z-20">
-                <Header
-                    title={isArchivedView ? "Archived" : undefined}
-                    onMenuClick={() => setShowMenu(!showMenu)}
-                    onNewChat={openCreateModal}
-                    newChatLabel="Seek Answers"
-                    newChatIcon={<TribeSanctumIcon size={20} active={false} />}
-                    showBack={isArchivedView}
-                    onBack={() => setIsArchivedView(false)}
-                    className={isIncognito ? '!bg-gray-900 border-b border-gray-800' : ''}
-                />
-
-                {/* Dropdown Menu */}
-                {showMenu && (
-                    <>
-                        <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)}></div>
-                        <div className="absolute top-[70px] left-4 w-64 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 z-30 py-2 animate-in fade-in zoom-in-95 duration-100 origin-top-left flex flex-col">
-
-                            {/* User Profile */}
-                            <button
-                                onClick={() => { setShowMenu(false); handleOpenProfileModal(); }}
-                                className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-3 transition-colors"
-                            >
-                                <div className="relative flex-shrink-0">
-                                    <img
-                                        src={userProfile.avatar}
-                                        alt="Profile"
-                                        className="w-10 h-10 rounded-full object-cover border border-gray-100 dark:border-gray-700"
-                                    />
-                                    <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white dark:border-gray-900"></div>
-                                </div>
-                                <div className="min-w-0">
-                                    <h4 className="text-sm font-bold text-gray-900 dark:text-white truncate">{userProfile.name}</h4>
-                                    <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full inline-block">
-                                        {userProfile.membership}
-                                    </span>
-                                </div>
-                            </button>
-
-                            <div className="h-px bg-gray-100 dark:bg-gray-800 my-1 mx-4" />
-
-                            <button
-                                onClick={() => { setShowMenu(false); setShowLanguageModal(true); }}
-                                className="w-full text-left px-4 py-3 text-sm font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors dark:text-gray-200 dark:hover:bg-gray-800"
-                            >
-                                <Globe size={18} />
-                                Language: {INDIAN_LANGUAGES.find(l => l.code === language)?.native || 'English'}
-                            </button>
-
-                            {/* Dark Mode Toggle */}
-                            <button
-                                onClick={() => { setShowMenu(false); onToggleDarkMode(); }}
-                                className="w-full text-left px-4 py-3 text-sm font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors dark:text-gray-200 dark:hover:bg-gray-800"
-                            >
-                                {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-                                {isDarkMode ? 'Light Mode' : 'Dark Mode'}
-                            </button>
-
-                            <button
-                                onClick={() => { setShowMenu(false); onOpenWallet(); }}
-                                className="w-full text-left px-4 py-3 text-sm font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors dark:text-gray-200 dark:hover:bg-gray-800"
-                            >
-                                <Wallet size={18} />
-                                Wallet
-                            </button>
-
-                            <div className="h-px bg-gray-100 dark:bg-gray-800 my-1 mx-4" />
-
-                            <button
-                                onClick={() => { setShowMenu(false); setIsArchivedView(true); }}
-                                className="w-full text-left px-4 py-3 text-sm font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors dark:text-gray-200 dark:hover:bg-gray-800"
-                            >
-                                <Archive size={18} />
-                                Archive
-                            </button>
-                            <button
-                                onClick={() => { setShowMenu(false); onOpenSettings(); }}
-                                className="w-full text-left px-4 py-3 text-sm font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors dark:text-gray-200 dark:hover:bg-gray-800"
-                            >
-                                <Settings size={18} />
-                                Settings
-                            </button>
-
-                            <div className="h-px bg-gray-100 dark:bg-gray-800 my-1 mx-4" />
-
-                            <button
-                                onClick={onLogout}
-                                className="w-full text-left px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 flex items-center gap-3 transition-colors"
-                            >
-                                <LogOut size={18} />
-                                Logout
-                            </button>
-                        </div>
-                    </>
-                )}
-            </div>
-
             {/* Incognito Banner */}
             {isIncognito && (
                 <div className="bg-gray-800 px-4 py-2 flex items-center justify-center gap-2 border-b border-gray-700">
@@ -584,27 +447,83 @@ const ChatsView: React.FC<ChatsViewProps> = ({ chats, isIncognito, isDarkMode, o
                 </div>
             )}
 
-            <div className="px-4 pt-4 pb-2">
-                <p className={`text-gray-500 ${isIncognito ? 'text-gray-400' : 'dark:text-gray-400'}`}>
-                    Welcome to the Tribe Sanctum. Engage with specialized agents or the community for support and guidance!
-                </p>
-            </div>
 
             {/* Sticky Bubble Tags */}
-            <div className={`sticky top-[88px] z-10 ${isIncognito ? 'bg-gray-900 border-gray-800' : 'bg-white dark:bg-gray-950 border-gray-100 dark:border-gray-800'} px-4 py-2 border-b`}>
-                <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
-                    {['All', 'Body', 'Mind', 'Spirit', 'Relations', 'Finances', 'Work'].map((tag) => (
-                        <button
-                            key={tag}
-                            onClick={() => setActiveTag(tag)}
-                            className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-bold transition-colors ${activeTag === tag
-                                ? (isIncognito ? 'bg-white text-gray-900' : 'bg-gray-900 dark:bg-white text-white dark:text-gray-900')
-                                : (isIncognito ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700')
-                                }`}
-                        >
-                            {tag}
-                        </button>
-                    ))}
+            <div className={`sticky top-0 z-30 ${isIncognito ? 'bg-gray-900' : 'bg-white dark:bg-gray-950'} px-4 pt-4 pb-0 relative`}>
+                <div className="w-full flex items-center gap-3 pb-2">
+
+                    <span className={`text-3xl font-black tracking-wide ${isIncognito ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
+                        CHATS
+                    </span>
+                    <div className="flex items-center gap-3 ml-auto">
+                        {userProfile && (
+                            <div className="flex items-center gap-2.5 pl-3">
+                                <div className="flex flex-col items-end min-w-0">
+                                    <span className={`text-[13px] font-bold truncate leading-tight ${isIncognito ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
+                                        {userProfile.name}
+                                    </span>
+                                    <span className="text-[10px] font-bold text-primary bg-primary/5 px-1.5 py-0.5 rounded-full mt-0.5 whitespace-nowrap">
+                                        {userProfile.membership}
+                                    </span>
+                                </div>
+                                <div className="relative shrink-0">
+                                    <img
+                                        src={userProfile.avatar}
+                                        alt="Profile"
+                                        className={`w-10 h-10 rounded-full object-cover border-2 shadow-md ${isIncognito ? 'border-gray-700' : 'border-white dark:border-gray-800'}`}
+                                    />
+                                    <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-900 shadow-sm"></div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                </div>
+                {/* Tribal Art Separator Line */}
+                <div className="w-full h-[5px] -mx-4 opacity-90 relative" style={{ width: 'calc(100% + 2rem)' }}>
+                    <svg width="100%" height="5" preserveAspectRatio="none" className="absolute bottom-0">
+                        <defs>
+                            <pattern id="tribal-line-chats" x="0" y="0" width="32" height="5" patternUnits="userSpaceOnUse">
+                                <rect width="32" height="5" fill="#fcd34d" />
+                                <path d="M0 5 L8 0 L16 5 L24 0 L32 5" fill="none" stroke="#dc2626" strokeWidth="1.5" strokeLinejoin="miter" />
+                                <path d="M0 5 L4 2.5 L8 5 L12 2.5 L16 5 L20 2.5 L24 5 L28 2.5 L32 5" fill="none" stroke="#ea580c" strokeWidth="1" strokeLinejoin="miter" />
+                                <circle cx="8" cy="3.5" r="0.75" fill="#451a03" />
+                                <circle cx="24" cy="3.5" r="0.75" fill="#451a03" />
+                            </pattern>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#tribal-line-chats)" />
+                    </svg>
+                </div>
+            </div>
+
+            {/* Featured Showcase Carousel */}
+            <div className="px-4 py-8">
+                <div className="relative w-full aspect-[64/27] rounded-[32px] overflow-hidden shadow-2xl bg-black group">
+                    <img
+                        src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&q=80&w=1200"
+                        className="w-full h-full object-cover opacity-80"
+                        alt="Featured Ad"
+                    />
+                    {/* Visual Overlays */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-8 items-center text-center">
+                        <h2 className="text-white text-3xl font-black tracking-tighter leading-none mb-1">CONNECT WITH EXPERTS</h2>
+                        <div className="w-12 h-0.5 bg-gray-500 mb-2" />
+                        <p className="text-white text-xl font-black tracking-widest uppercase mb-1">PRO ADVICE ON DEMAND</p>
+                    </div>
+
+                    {/* Navigation Arrows */}
+                    <button className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+                    </button>
+                    <button className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+                    </button>
+
+                    {/* Carousel Dots */}
+                    <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full bg-white shadow-sm" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-white/40 shadow-sm" />
+                    </div>
                 </div>
             </div>
 
@@ -619,7 +538,7 @@ const ChatsView: React.FC<ChatsViewProps> = ({ chats, isIncognito, isDarkMode, o
                                 <p className="text-xs mt-2 text-gray-600">Chats here are temporary.</p>
                             </>
                         ) : (
-                            <p>{isArchivedView ? 'No archived chats' : 'No active chats found'}</p>
+                            <p>No active chats found</p>
                         )}
                     </div>
                 ) : (
@@ -676,183 +595,92 @@ const ChatsView: React.FC<ChatsViewProps> = ({ chats, isIncognito, isDarkMode, o
                 </div>
             )}
 
-            {/* Profile Edit Modal */}
-            {showProfileModal && (
-                <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-gray-900 w-full max-w-sm rounded-2xl p-0 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col">
-                        <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-800/50 rounded-t-2xl">
-                            <h3 className="font-bold text-gray-900 dark:text-white text-lg">Edit Profile</h3>
-                            <button
-                                onClick={() => setShowProfileModal(false)}
-                                className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
-                            >
-                                <X size={20} className="text-gray-500 dark:text-gray-400" />
-                            </button>
-                        </div>
-
-                        <div className="p-6">
-                            {/* Avatar Edit */}
-                            <div className="flex flex-col items-center mb-6">
-                                <div className="relative group cursor-pointer" onClick={() => profileImageInputRef.current?.click()}>
-                                    <img
-                                        src={tempProfile.avatar}
-                                        alt="Profile"
-                                        className="w-24 h-24 rounded-full object-cover border-4 border-gray-100 dark:border-gray-800 group-hover:opacity-75 transition-opacity"
-                                    />
-                                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <Camera size={24} className="text-white drop-shadow-md" />
-                                    </div>
-                                    <div className="absolute bottom-0 right-0 bg-primary text-white p-1.5 rounded-full border-2 border-white dark:border-gray-900 shadow-sm">
-                                        <Edit2 size={12} />
-                                    </div>
-                                </div>
-                                <input
-                                    type="file"
-                                    ref={profileImageInputRef}
-                                    className="hidden"
-                                    accept="image/*"
-                                    onChange={handleAvatarChange}
-                                />
-                                <span className="text-xs text-primary font-bold mt-2 cursor-pointer hover:underline" onClick={() => profileImageInputRef.current?.click()}>
-                                    Change Photo
-                                </span>
-                            </div>
-
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Name</label>
-                                    <input
-                                        type="text"
-                                        value={tempProfile.name}
-                                        onChange={(e) => setTempProfile({ ...tempProfile, name: e.target.value })}
-                                        className="w-full px-4 py-3 rounded-xl bg-gray-50 border-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-gray-900 focus:ring-2 focus:ring-primary/20 focus:bg-white dark:focus:bg-gray-800 transition-all outline-none"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Membership Type</label>
-                                    <input
-                                        type="text"
-                                        value={tempProfile.membership}
-                                        onChange={(e) => setTempProfile({ ...tempProfile, membership: e.target.value })}
-                                        className="w-full px-4 py-3 rounded-xl bg-gray-50 border-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-gray-900 focus:ring-2 focus:ring-primary/20 focus:bg-white dark:focus:bg-gray-800 transition-all outline-none"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="p-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 rounded-b-2xl flex gap-3">
-                            <button
-                                onClick={() => setShowProfileModal(false)}
-                                className="flex-1 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-bold rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleSaveProfile}
-                                disabled={!tempProfile.name.trim()}
-                                className="flex-1 py-3 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/30 hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                Save Changes
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
             {/* New Chat Modal */}
             {showCreateModal && (
-                <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-gray-900 w-full max-w-sm rounded-2xl p-0 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
-                        <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-800/50 rounded-t-2xl">
-                            <div className="flex items-center gap-2">
-                                <h3 className="font-bold text-gray-900 dark:text-white text-lg">
-                                    How can we help ?
-                                </h3>
-                            </div>
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowCreateModal(false)} />
+                    <div className="relative w-full max-w-sm bg-white dark:bg-gray-900 rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+                        <div className="p-6 shrink-0 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                            <h2 className="text-xl font-bold text-gray-900 dark:text-white">How can we help</h2>
                             <button
-                                onClick={() => {
-                                    setShowCreateModal(false);
-                                }}
-                                className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+                                onClick={() => setShowCreateModal(false)}
+                                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                             >
-                                <X size={20} className="text-gray-500 dark:text-gray-400" />
+                                <X size={20} className="hover:rotate-90 transition-transform" />
                             </button>
                         </div>
 
                         <div className="flex flex-col min-h-0 flex-1">
-                            <div className="p-6 overflow-y-auto flex-1">
-                                <div className="space-y-5">
-                                    {/* Context Category Selector */}
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {CONTEXT_CATEGORIES.map(cat => (
-                                            <button
-                                                key={cat.id}
-                                                onClick={() => setSelectedContextCategory(cat.label)}
-                                                className={`relative flex items-center p-2 rounded-lg border transition-all ${selectedContextCategory === cat.label
-                                                    ? `bg-white dark:bg-gray-800 ring-2 ring-offset-1 ${cat.color.replace('bg-', 'ring-')}`
-                                                    : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-gray-300'
-                                                    }`}
-                                            >
-                                                <div className={`w-1.5 h-8 rounded-full mr-3 ${cat.color}`}></div>
-                                                <span className="text-sm font-bold text-gray-700 dark:text-gray-300">{cat.label}</span>
-                                                {selectedContextCategory === cat.label && (
-                                                    <div className="absolute right-2 text-primary">
-                                                        <Check size={16} />
-                                                    </div>
-                                                )}
-                                            </button>
-                                        ))}
+                            <div className="p-6 overflow-y-auto space-y-5">
+                                {/* Category Dropdown */}
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5 ml-1">Category</label>
+                                    <div className="relative">
+                                        <select
+                                            value={selectedContextCategory}
+                                            onChange={(e) => setSelectedContextCategory(e.target.value)}
+                                            className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl px-4 py-3.5 text-gray-900 dark:text-white appearance-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-[15px] font-medium cursor-pointer"
+                                        >
+                                            {CONTEXT_CATEGORIES.map(cat => (
+                                                <option key={cat.id} value={cat.label}>{cat.label}</option>
+                                            ))}
+                                        </select>
+                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                                            <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
+                                        </div>
                                     </div>
+                                </div>
 
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-2">Title *</label>
-                                        <div className="relative">
-                                            <input
-                                                autoFocus
-                                                type="text"
-                                                value={newChatTitle}
-                                                onChange={(e) => setNewChatTitle(e.target.value.toUpperCase())}
-                                                className="w-full pl-4 pr-12 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-primary/20 focus:bg-white dark:focus:bg-gray-800 focus:border-primary transition-all outline-none text-sm uppercase"
-                                                placeholder="e.g. LEGAL ADVICE FOR LEASE"
-                                                required
-                                            />
-                                            <button
-                                                onClick={() => toggleMic('title')}
-                                                className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full transition-colors ${listeningField === 'title' ? 'text-red-500 bg-red-50 animate-pulse' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
-                                                title="Speak Title"
-                                            >
-                                                <Mic size={18} />
-                                            </button>
-                                        </div>
+                                {/* Title Input */}
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5 ml-1">Title *</label>
+                                    <div className="relative">
+                                        <input
+                                            autoFocus
+                                            type="text"
+                                            value={newChatTitle}
+                                            onChange={(e) => setNewChatTitle(e.target.value.toUpperCase())}
+                                            className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl px-4 py-3.5 pr-12 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-[15px] font-medium uppercase"
+                                            placeholder="e.g. LEGAL ADVICE FOR LEASE"
+                                            required
+                                        />
+                                        <button
+                                            onClick={() => toggleMic('title')}
+                                            className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full transition-colors ${listeningField === 'title' ? 'text-danger bg-red-50 animate-pulse' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
+                                            title="Speak Title"
+                                        >
+                                            <Mic size={18} />
+                                        </button>
                                     </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-2">Context *</label>
-                                        <div className="relative">
-                                            <textarea
-                                                value={newChatDescription}
-                                                onChange={(e) => setNewChatDescription(e.target.value)}
-                                                className="w-full pl-4 pr-12 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-primary/20 focus:bg-white dark:focus:bg-gray-800 focus:border-primary transition-all outline-none text-sm resize-none h-28"
-                                                placeholder={`Describe the situation for ${SUPERVISOR_AGENT.name.split(' ')[0]}...`}
-                                                required
-                                            />
-                                            <button
-                                                onClick={() => toggleMic('context')}
-                                                className={`absolute right-2 top-4 p-2 rounded-full transition-colors ${listeningField === 'context' ? 'text-red-500 bg-red-50 animate-pulse' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
-                                                title="Speak Context"
-                                            >
-                                                <Mic size={18} />
-                                            </button>
-                                        </div>
+                                </div>
+
+                                {/* Context TextArea */}
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5 ml-1">Context *</label>
+                                    <div className="relative">
+                                        <textarea
+                                            value={newChatDescription}
+                                            onChange={(e) => setNewChatDescription(e.target.value)}
+                                            className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl px-4 py-3.5 pr-12 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none min-h-[120px] text-[15px] font-medium"
+                                            placeholder={`Describe the situation...`}
+                                            required
+                                        />
+                                        <button
+                                            onClick={() => toggleMic('context')}
+                                            className={`absolute right-2 top-4 p-2 rounded-full transition-colors ${listeningField === 'context' ? 'text-danger bg-red-50 animate-pulse' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
+                                            title="Speak Context"
+                                        >
+                                            <Mic size={18} />
+                                        </button>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 rounded-b-2xl mt-auto">
+                            <div className="p-4 shrink-0 bg-gray-50/50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-800">
                                 <button
                                     onClick={handleCreateSubmit}
                                     disabled={!isFormValid}
-                                    className="w-full bg-primary disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2 hover:opacity-90"
+                                    className="w-full bg-primary disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                                 >
                                     Start Chat
                                 </button>
@@ -860,8 +688,7 @@ const ChatsView: React.FC<ChatsViewProps> = ({ chats, isIncognito, isDarkMode, o
                         </div>
                     </div>
                 </div>
-            )
-            }
+            )}
         </div >
     );
 };

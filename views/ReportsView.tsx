@@ -47,7 +47,7 @@ const ReportsView: React.FC<ReportsViewProps> = ({ reports }) => {
             <div className="space-y-1">
             {filteredReports.map(report => (
                 <div key={report.id} className="flex items-center gap-4 bg-white py-3 px-4 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer group">
-                <div className="flex items-center justify-center rounded-lg bg-red-50 text-red-500 shrink-0 w-12 h-12">
+                <div className="flex items-center justify-center rounded-lg bg-red-50 text-danger shrink-0 w-12 h-12">
                     <FileText size={24} />
                 </div>
                 <div className="flex flex-col justify-center flex-1 min-w-0">

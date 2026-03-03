@@ -138,7 +138,7 @@ const RegisterView: React.FC<RegisterViewProps> = ({ onRegister, onNavigateToLog
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Initial Use Case / Description <span className="text-red-500">*</span>
+            Initial Use Case / Description <span className="text-danger">*</span>
           </label>
           <div className="relative">
             <textarea 
@@ -152,7 +152,7 @@ const RegisterView: React.FC<RegisterViewProps> = ({ onRegister, onNavigateToLog
               type="button"
               onClick={toggleMic}
               className={`absolute right-3 bottom-3 p-2 rounded-full transition-colors ${
-                  isListening ? 'bg-red-50 text-red-500 animate-pulse' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+                  isListening ? 'bg-red-50 text-danger animate-pulse' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
               }`}
               title="Speak Description"
             >

@@ -79,7 +79,7 @@ const TasksView: React.FC<TasksViewProps> = ({ tasks, bills, initialSelectedTitl
                 className="bg-white px-5 py-5 hover:bg-gray-50 transition-colors cursor-pointer"
               >
                 <div className="flex items-start gap-3">
-                   <div className="bg-blue-50 p-2.5 rounded-lg text-blue-600 shrink-0">
+                   <div className="bg-primary/10 p-2.5 rounded-lg text-primary shrink-0">
                        <FileText size={20} />
                    </div>
                    <div className="flex-1 min-w-0">

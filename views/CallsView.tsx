@@ -53,11 +53,11 @@ const CallsView: React.FC<CallsViewProps> = ({ calls }) => {
               </div>
               
               <div className="flex flex-1 flex-col justify-center">
-                <p className={`text-base font-bold leading-none mb-1 ${call.type === 'missed' ? 'text-red-500' : 'text-gray-900'}`}>{call.contactName}</p>
+                <p className={`text-base font-bold leading-none mb-1 ${call.type === 'missed' ? 'text-danger' : 'text-gray-900'}`}>{call.contactName}</p>
                 <div className="flex items-center gap-1.5">
                   {call.type === 'incoming' && <PhoneIncoming size={14} className="text-primary" />}
                   {call.type === 'outgoing' && <PhoneOutgoing size={14} className="text-green-500" />}
-                  {call.type === 'missed' && <PhoneMissed size={14} className="text-red-500" />}
+                  {call.type === 'missed' && <PhoneMissed size={14} className="text-danger" />}
                   <p className="text-sm font-medium text-gray-500">
                     {call.type.charAt(0).toUpperCase() + call.type.slice(1)} • {
                         // Simple relative time mock

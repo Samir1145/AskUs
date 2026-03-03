@@ -123,7 +123,7 @@ const SkillsView: React.FC<SkillsViewProps> = ({ agents, onSelectAgent }) => {
                     <div className="grid grid-cols-1 gap-2">
                         {getAgentSkills(selectedAgentForModal.id).map((skill, index) => (
                           <div key={index} className="flex items-center gap-2 text-sm text-red-900">
-                             <span className="text-red-500 shrink-0">{skill.icon}</span>
+                             <span className="text-danger shrink-0">{skill.icon}</span>
                              <span>{skill.label}</span>
                           </div>
                         ))}

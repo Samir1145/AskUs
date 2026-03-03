@@ -41,11 +41,12 @@ const IncognitoIcon = ({ size = 24, className = "" }: { size?: number, className
 
 // Custom Team Icon (3 People with Ties in Box)
 const CONTEXT_CATEGORIES = [
-    { id: 'body', label: 'Body', color: 'bg-blue-700' },
-    { id: 'mind', label: 'Mind', color: 'bg-cyan-500' },
-    { id: 'spirit', label: 'Spirit', color: 'bg-lime-500' },
-    { id: 'relationships', label: 'Relationships', color: 'bg-red-600' },
-    { id: 'finances', label: 'Finances', color: 'bg-orange-500' },
+    { id: 'body', label: 'Body', color: 'bg-secondary' },   // Brand Yellow
+    { id: 'mind', label: 'Mind', color: 'bg-primary' },     // Brand Purple
+    { id: 'spirit', label: 'Spirit', color: 'bg-accent' },   // Brand Orange
+    { id: 'relations', label: 'Relations', color: 'bg-danger' }, // Brand Red
+    { id: 'finances', label: 'Finances', color: 'bg-accent' },   // Brand Orange
+    { id: 'work', label: 'Work', color: 'bg-primary' },     // Brand Purple
 ];
 
 const TeamGroupIcon = ({ size = 24, className = "" }: { size?: number, className?: string }) => (
@@ -651,7 +652,7 @@ const ChatDetailView: React.FC<ChatDetailViewProps> = ({ chat, onBack, onSendMes
     const attachmentOptions = [
         { label: 'Gallery', icon: <Image size={24} />, color: 'text-purple-500' },
         { label: 'Camera', icon: <Camera size={24} />, color: 'text-rose-500' },
-        { label: 'Document', icon: <FileText size={24} />, color: 'text-blue-500' },
+        { label: 'Document', icon: <FileText size={24} />, color: 'text-primary' },
         { label: 'Location', icon: <MapPin size={24} />, color: 'text-green-500' },
     ];
 
@@ -724,9 +725,6 @@ const ChatDetailView: React.FC<ChatDetailViewProps> = ({ chat, onBack, onSendMes
 
                 {/* Header */}
                 <header className={`flex items-center px-4 py-3 border-b sticky top-0 z-20 shadow-sm min-h-[64px] ${isIncognito ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100 dark:bg-gray-900 dark:border-gray-800'}`}>
-                    <button onClick={onBack} className={`mr-3 p-1 rounded-full hover:bg-opacity-10 ${isIncognito ? 'text-gray-300 hover:bg-gray-500' : 'text-primary hover:bg-red-50 dark:hover:bg-gray-800'}`}>
-                        <ArrowLeft className="w-6 h-6" />
-                    </button>
                     <div className="flex items-center flex-1 min-w-0">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg mr-3 shadow-sm shrink-0 overflow-hidden ${isIncognito ? 'bg-gray-600' : avatarColor}`}>
                             {chat.avatar && !chat.avatar.includes('robohash') ? (
@@ -749,7 +747,7 @@ const ChatDetailView: React.FC<ChatDetailViewProps> = ({ chat, onBack, onSendMes
                                             className={`w-full text-sm font-bold border-b outline-none py-0.5 ${isIncognito ? 'bg-transparent text-white border-gray-500' : 'text-gray-900 border-primary dark:bg-gray-800 dark:text-white'}`}
                                         />
                                         <button onClick={saveTitle} className="text-green-600 hover:bg-green-50 rounded-full p-0.5"><Check size={16} /></button>
-                                        <button onClick={() => { setTempTitle(chat.title); setTempCategory(chatCategory); setIsEditingTitle(false); }} className="text-red-500 hover:bg-red-50 rounded-full p-0.5"><X size={16} /></button>
+                                        <button onClick={() => { setTempTitle(chat.title); setTempCategory(chatCategory); setIsEditingTitle(false); }} className="text-danger hover:bg-red-50 rounded-full p-0.5"><X size={16} /></button>
                                     </div>
                                 ) : (
                                     <>
@@ -908,7 +906,7 @@ const ChatDetailView: React.FC<ChatDetailViewProps> = ({ chat, onBack, onSendMes
 
                                 <button
                                     onClick={endLiveCall}
-                                    className="p-5 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-transform active:scale-95"
+                                    className="p-5 bg-danger text-white rounded-full shadow-lg hover:bg-red-600 transition-transform active:scale-95"
                                 >
                                     <PhoneOff size={32} />
                                 </button>
@@ -978,8 +976,8 @@ const ChatDetailView: React.FC<ChatDetailViewProps> = ({ chat, onBack, onSendMes
 
                                     <div
                                         className={`max-w-[85%] rounded-2xl px-4 py-3 shadow-sm ${isUser
-                                                ? (isIncognito ? 'bg-gray-700 text-white rounded-br-none' : 'bg-primary text-white rounded-br-none')
-                                                : (isIncognito ? 'bg-gray-800 text-gray-200 border-gray-700 rounded-bl-none' : 'bg-white text-gray-800 border border-gray-100 rounded-bl-none dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700')
+                                            ? (isIncognito ? 'bg-gray-700 text-white rounded-br-none' : 'bg-primary text-white rounded-br-none')
+                                            : (isIncognito ? 'bg-gray-800 text-gray-200 border-gray-700 rounded-bl-none' : 'bg-white text-gray-800 border border-gray-100 rounded-bl-none dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700')
                                             }`}
                                     >
                                         {/* Sub-agent Name Label */}
@@ -988,11 +986,11 @@ const ChatDetailView: React.FC<ChatDetailViewProps> = ({ chat, onBack, onSendMes
                                                 <span className={`text-xs font-bold ${isIncognito ? 'text-gray-300' : 'text-gray-900 dark:text-white'}`}>{agentName}</span>
                                                 {agentRole && (
                                                     <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide ${isIncognito
-                                                            ? 'bg-gray-900 text-gray-400'
-                                                            : (agentRole === 'Medical' ? 'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400' :
-                                                                agentRole === 'Legal' ? 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300' :
-                                                                    agentRole === 'Education' ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400' :
-                                                                        'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400')
+                                                        ? 'bg-gray-900 text-gray-400'
+                                                        : (agentRole === 'Medical' ? 'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400' :
+                                                            agentRole === 'Legal' ? 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300' :
+                                                                agentRole === 'Education' ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400' :
+                                                                    'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400')
                                                         }`}>
                                                         {agentRole}
                                                     </span>
@@ -1011,7 +1009,7 @@ const ChatDetailView: React.FC<ChatDetailViewProps> = ({ chat, onBack, onSendMes
                                                 onClick={() => onViewReport(msg.text)}
                                                 className={`flex items-center space-x-3 p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow group text-left w-full border ${isIncognito ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100 dark:bg-gray-900 dark:border-gray-700'}`}
                                             >
-                                                <div className={`p-2.5 rounded-lg transition-colors ${isIncognito ? 'bg-red-900/30 text-red-400' : 'bg-red-50 text-red-500 group-hover:bg-red-100 dark:bg-red-900/20'}`}>
+                                                <div className={`p-2.5 rounded-lg transition-colors ${isIncognito ? 'bg-red-900/30 text-red-400' : 'bg-red-50 text-danger group-hover:bg-red-100 dark:bg-red-900/20'}`}>
                                                     <FileText size={24} />
                                                 </div>
                                                 <div className="flex flex-col min-w-0">
@@ -1116,8 +1114,8 @@ const ChatDetailView: React.FC<ChatDetailViewProps> = ({ chat, onBack, onSendMes
                         <button
                             onClick={handleMicClick}
                             className={`w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-all mb-1 flex-shrink-0 ${isListening
-                                    ? 'bg-primary text-white animate-pulse scale-110'
-                                    : (isIncognito ? 'bg-gray-600 text-white hover:bg-gray-500' : 'bg-primary text-white hover:bg-red-600')
+                                ? 'bg-primary text-white animate-pulse scale-110'
+                                : (isIncognito ? 'bg-gray-600 text-white hover:bg-gray-500' : 'bg-primary text-white hover:bg-red-600')
                                 }`}
                         >
                             {isListening ? <Mic className="w-5 h-5 animate-bounce" /> : <Mic className="w-5 h-5" />}
@@ -1152,7 +1150,7 @@ const ChatDetailView: React.FC<ChatDetailViewProps> = ({ chat, onBack, onSendMes
                                     {chat.pendingActions.map((task, i) => (
                                         <div key={i} className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col gap-3">
                                             <div className="flex items-start gap-3">
-                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${task.startsWith('Review Report:') ? 'bg-red-50 text-red-500 dark:bg-red-900/20' : 'bg-blue-50 text-primary dark:bg-blue-900/20'}`}>
+                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${task.startsWith('Review Report:') ? 'bg-red-50 text-danger dark:bg-red-900/20' : 'bg-primary/10 text-primary dark:bg-blue-900/20'}`}>
                                                     {task.startsWith('Review Report:') ? <FileText size={18} /> : <Bot size={18} />}
                                                 </div>
                                                 <div>

@@ -338,7 +338,7 @@ const MusicView: React.FC = () => {
                                                 id={`music-stop-${track.id}`}
                                                 onClick={() => handleStop(track.id)}
                                                 className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 ${isActive
-                                                    ? 'bg-red-100 dark:bg-red-500/20 text-red-500 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-500/30'
+                                                    ? 'bg-red-100 dark:bg-danger/20 text-danger dark:text-red-400 hover:bg-red-200 dark:hover:bg-danger/30'
                                                     : 'bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-gray-600 hover:bg-gray-200 dark:hover:bg-white/10'
                                                     }`}
                                             >
